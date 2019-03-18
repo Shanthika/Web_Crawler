@@ -1,48 +1,64 @@
-import urllib.request
 import re
 import os
-import http.client
+import string
+import urllib.request
 import nltk
+import http.client
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 from readability.readability import Document
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.tokenize import sent_tokenize
 
 
 def user_input():
-    #print("Enter the Keyword/s. [use - instead of space for more than one word]")
-    #keyword = [x for x in input("Search For :").split('-')]
-    #print(keyword)
     read_input=open("input.txt","r")
     keyword=[]
     for f in read_input:
-    	keyword=f.split()[0]
+    	keyword.append(f.split()[0])
+    
+
     collect_urls(keyword)
 
 
 
 
-def collect_urls(keyword):
+def collect_urls(key):
     try:
+        #urllib.request.build_opener() returns an OpenerDirector instance, which chains the handlers in the order given.
+        #The OpenerDirector class opens URLs.
         opener = urllib.request.build_opener()
-        
-        opener.addheaders = [('User-agent','Chrome/35.0.1916.47')]
-        
-        file = open("links.txt","w",encoding="utf-8")
-        
-        for searchWord in keyword:
+
+        #headers are dictionary that accepts a key and a value.
+        #User-agent header is used by a browser to identify itself.
+        #here Mozilla5.0 is used as a browser.
+        opener.addheaders = [('User-agent', 'Chrome/35.0.1916.47')]
+
+        #opens the text file links.txt in write mode which is assigned to a file-object file
+        file = open("links.txt", "w",encoding="utf-8")
+        for searchWord in key:
+            #url format appended with the keyword to be searched
             url = "http://www.google.com/search?q="+ searchWord +"&start="
+
+            #opens the webpage in the browser with the above url
             page = opener.open(url)
-            soup = BeautifulSoup(page,"html.parser")
-            
+
+            #specifies that the html parser is used to parse the data returned from the page
+            soup = BeautifulSoup(page, "html.parser")
+
+            #soup.find_all() method will perform a match against that of argument provided
+            #here each match is the url of the cite which is written in the file links.txt
             for cite in soup.find_all('cite'):
                 file.write(cite.text)
                 file.write("\n")
+            file.write("----------------------------------------------------------------------------")
             file.write("\n")
         file.close()
+       
+
     except (urllib.request.HTTPError, urllib.request.URLError, http.client.HTTPException, BaseException):
         pass
-        
-
 
 def validate_urls():
     forWrite = open("Validlinks.txt","w")
@@ -57,8 +73,11 @@ def validate_urls():
     forWrite.close()
     forRead.close()
     print("Check the file Validlinks.txt for results")
-
-
+        #deletes 'links.txt' file
+    if os.path.exists("links.txt"):
+        os.remove("links.txt")
+    else:
+        print("File does not exists!!")
 def fetch_text():
     opener = urllib.request.build_opener()
     opener.addheaders = [('User-agent', 'Chrome/35.0.1916.47')]
@@ -72,32 +91,35 @@ def fetch_text():
         for eachLine in forRead:
             try:
                 if eachLine.startswith("http"):
-                    con = urlopen(eachLine).read()    
+                    con = urlopen(eachLine).read()
                     readable_article = Document(con).summary()
                     readable_title = Document(con).title()
-                    soup = BeautifulSoup(readable_article,"lxml")
-
-                    forWrite.write(readable_title)
-                    forWrite.write("\n")
-                    forWrite.write(soup.text[:5000] + '[...]\"')
-                       
+                    
                 else:
                     con = urlopen("http://"+eachLine).read()
                     readable_article = Document(con).summary()
                     readable_title = Document(con).title()
-                    soup = BeautifulSoup(readable_article,"lxml")
 
-                    forWrite.write(readable_title)
-                    forWrite.write("\n")
-                    forWrite.write(soup.text[:5000] + '[...]\"')
-    
-
+                soup = BeautifulSoup(readable_article,"lxml")
 
             except(urllib.request.HTTPError, urllib.request.URLError, http.client.HTTPException, http.client.IncompleteRead, BaseException):
                 continue
-    
+
+            try:
+                # adds delimeter '|' at the end of portion of text from each link
+                result = soup.text[:8000]+'|'
+                forWrite.write(result)
+
+                # line break to indicate the following portion of text is from another link
+                if re.match('|',result) != None:
+                     forWrite.write("\n")
+                
+            except (SystemError, UnicodeEncodeError):
+                continue
+         
     forWrite.close()
     forRead.close()
+    #print("check links.txt!")
 
 
 def clean_fetched_data(): 
@@ -111,13 +133,64 @@ def clean_fetched_data():
     print("Fetched data modified.")
     forRead.close()
     newFile.close()
+    #deletes 'web_data.txt' file
+    if os.path.exists("web_data.txt"):
+        os.remove("web_data.txt")
+    else:
+        print("File does not exists!!")
 
+
+def tokenize_text():
+    newFile = open("WebData.txt","r")
+    readText = newFile.read()
+    newFile.close()
+
+    # tokenize each senetence in text file
+    senTokens = nltk.sent_tokenize(readText)
+    senTokens = [w.lower() for w in senTokens]
+    newFile = open("WebData.txt","w")
+
+    # stores in same file sentence-wise
+    for stk in senTokens:
+        newFile.write(""+stk)
+        newFile.write("\n")
+    newFile.close()
+
+
+def tokenize_words():
+    newFile = open("WebData.txt","r")
+    text = newFile.read()
+    newFile.close()        
+    wordTokens = nltk.word_tokenize(text)
+
+    # remove punctuation from each word
+    table = str.maketrans('','',string.punctuation)
+    stripped = [w.translate(table) for w in wordTokens]
+
+    # remove remaining tokens that are not alphabetic/numeric
+    checkWords = [word for word in stripped if word.isalnum()]
+    newFile = open("./static/Data.txt","w")
+
+    # stores in same file sentence-wise
+    for wt in checkWords:
+        newFile.write(" "+wt)
+        #newFile.write("\n")
+    newFile.close()
+
+    #deletes 'web_data.txt' file
+    if os.path.exists("WebData.txt"):
+        os.remove("WebData.txt")
+    else:
+        print("File does not exists!!")
+    print("Check the file newData.txt for data!")
 
 def do():
     user_input()
     validate_urls()
     fetch_text()
     clean_fetched_data()
+    tokenize_text()
+    tokenize_words()
 do()
 
 

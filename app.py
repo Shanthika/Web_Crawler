@@ -1,5 +1,6 @@
 from flask import Flask, render_template,request
 from web_crawler import do
+import os
 
 app = Flask(__name__)
 
@@ -16,11 +17,11 @@ def Search():
 	    fo.write(result)
 	    fo.close()
 	    do()
+	    #os.system('chmod 777 ./static/*.txt')
+	    #os.system('cp newData.txt ./static/newData.txt')
+	    return render_template('data.html')
 
-	return render_template('front.html') 
-
-    	
-
+		
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=8080, debug=True)
 
