@@ -10,13 +10,14 @@ from readability.readability import Document
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.tokenize import sent_tokenize
+from random import randint
 
 
 def user_input():
     read_input=open("input.txt","r")
     keyword=[]
     for f in read_input:
-    	keyword.append(f.split()[0])
+        keyword.append(f.split()[0])
     
 
     collect_urls(keyword)
@@ -158,6 +159,7 @@ def tokenize_text():
 
 
 def tokenize_words():
+    
     newFile = open("WebData.txt","r")
     text = newFile.read()
     newFile.close()        
@@ -169,7 +171,15 @@ def tokenize_words():
 
     # remove remaining tokens that are not alphabetic/numeric
     checkWords = [word for word in stripped if word.isalnum()]
-    newFile = open("./static/Data.txt","w")
+    
+    filename=os.listdir("./static")
+    if(len(filename)!=0):
+        rm_file="./static/"+filename[0]
+        os.system('rm '+rm_file)        
+
+    rm = randint(1,1000)
+    f_name="./newData.txt"
+    newFile = open(f_name,"w")
 
     # stores in same file sentence-wise
     for wt in checkWords:
@@ -178,7 +188,7 @@ def tokenize_words():
     newFile.close()
 
     #deletes 'web_data.txt' file
-    if os.path.exists("WebData.txt"):
+    if os.path.exists(" WebData.txt"):
         os.remove("WebData.txt")
     else:
         print("File does not exists!!")

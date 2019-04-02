@@ -8,20 +8,27 @@ app = Flask(__name__)
 def home():
     return render_template('front.html') 
 
+ 
+
 @app.route('/Search',methods = ['POST', 'GET'])
 def Search():
 	if request.method == 'POST':
-	    result = request.form['keyword']
-	    
+	    result = request.form['keyword'] 
 	    fo=open("input.txt","w")
 	    fo.write(result)
 	    fo.close()
 	    do()
-	    #os.system('chmod 777 ./static/*.txt')
-	    #os.system('cp newData.txt ./static/newData.txt')
-	    return render_template('data.html')
+	    os.system('xdg-open ./templates/data.html')
 
-		
+	    return render_template('front.html' )
+
+
+@app.route('/uploads/<filename>')
+def send_file(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename)
+
+
+
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=8080, debug=True)
 
